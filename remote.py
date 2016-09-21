@@ -229,16 +229,32 @@ class Remote:
 			minute_points = fit_sleep['minuteData']
 			sleep_count += 1
 
-			# save first time stamp for comparison
-			start_time = minute_points[0]['dateTime']
+			# save first time stamp for comparison, truncated to minute
+			start_time = minute_points[0]['dateTime'][0:5] + ":00"
 			# convert to date, add 1 day, convert back to string
 			next_date_stamp = (datetime.strptime(date_stamp, DATE_FORMAT) + timedelta(1)).strftime(DATE_FORMAT)
 
+			# merge the fitbit sleep data into segments with duration and type
+			new_minute_points = []
+			prev_point = None
+			for point in minute_points:
+				# Start new segment when value changes or at midnight
+				if prev_point == None or prev_point['value'] != point['value'] or point['dateTime'][0:5] == '00:00':
+					# truncate to minute
+					point['dateTime'] = point['dateTime'][0:5] + ":00"
+					point['duration'] = 59999999999 # 60 sec - 1 nano
+					new_minute_points.append(point)
+					prev_point = point
+				else:
+					prev_point['duration'] += 1000000000
+			
 			# convert all fitbit data points to google fit data points
-			googlePoints = [self.convertor.ConvertFibitPoint((date_stamp if start_time <= point['dateTime'] else next_date_stamp),point,'sleep') for point in minute_points]
+			googlePoints = [self.convertor.ConvertFibitPoint((date_stamp if start_time <= point['dateTime'] else next_date_stamp),point,'sleep') for point in new_minute_points]
 
-			# 1. Write a fit session about sleep
+			# create sleep session data
 			google_session = self.convertor.ConvertGFitSleepSession(googlePoints, fit_sleep['logId'])
+			
+			# 1. Write a fit session about sleep
 			self.WriteSessionToGoogleFit(google_session)
 
 			# 2. create activity segment data points for the activity

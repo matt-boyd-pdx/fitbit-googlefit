@@ -213,7 +213,7 @@ class Convertor:
 		return dict(
 			dataTypeName='com.google.activity.segment',
 			startTimeNanos=epoch_time_nanos,
-			endTimeNanos=epoch_time_nanos+60000000000,
+			endTimeNanos=epoch_time_nanos + data_point['duration'],
 			value=[dict(intVal=sleepType)]
 			)
 
@@ -230,7 +230,7 @@ class Convertor:
 			modifiedTimeMillis=int((time.time() * 1000)),
 			startTimeMillis=minLogMillis,
 			endTimeMillis=maxLogMillis,
-			activeTimeMillis=maxLogMillis-minLogMillis,
+			# activeTimeMillis=maxLogMillis-minLogMillis,
 			description='A Fitbit sleep log',
 			activityType=72,
 			application=dict(name='Fbit-Gfit',detailsUrl=''),
